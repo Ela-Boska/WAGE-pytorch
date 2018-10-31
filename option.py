@@ -23,7 +23,7 @@ bitsE = 8  # bit width of errors
 
 bitsR = 16  # bit width of randomizer
 
-beta = 2
+beta = 1
 
 lr = torch.tensor(1,dtype=torch.float)
 lr_schedule = [0, 8, 200, 1,250,1./8,300,0]
