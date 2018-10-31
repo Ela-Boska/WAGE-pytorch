@@ -23,7 +23,7 @@ def clamp_weights(model):
 
 
 class conv2d(Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, dilation = 1):
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1, activation=nn.ReLU):
         super(conv2d, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -43,17 +43,19 @@ class conv2d(Module):
         )
         self.GQ = quantize.GQ.apply
         self.EQ = quantize.EQ(in_channels*stride**2).apply
+        self.activation = activation
 
     def forward(self, input):
         weight_tmp = self.GQ(self.weight.data)
         bias_tmp = self.GQ(self.bias.data)
         input = F.conv2d(input, weight_tmp, bias_tmp, self.stride, self.padding, self.dilation)
+        input = self.activation(input)
         input = input / self.alpha
         input = self.EQ(input)
         return input
 
 class linear(Module):
-    def __init__(self, n_in, n_out):
+    def __init__(self, n_in, n_out, activation = nn.ReLU):
         super(linear, self).__init__()
         self.n_in = n_in
         self.n_out = n_out
@@ -69,11 +71,13 @@ class linear(Module):
         )
         self.GQ = quantize.GQ.apply
         self.EQ = quantize.EQ(n_in).apply
+        self.activation = activation
         
     def forward(self, input):
         weight_tmp = self.GQ(self.weight.data)
         bias_tmp = self.GQ(self.bias.data)
         input = F.linear(input, weight_tmp, bias_tmp)
+        input = self.activation(input)
         input /= self.alpha
         input = self.EQ(input)
         return input
