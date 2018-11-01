@@ -96,6 +96,8 @@ class wraper(Module):
         print('epoch {0:>3}, precision = {1:>5.4}%, loss = {1:>5.4}'.format(self.epoch, 100*precision, loss))
         self.writer.add_scalar('precision',precision,self.epoch)
         self.writer.add_scalar('val_loss',loss,self.epoch)
+        self.precision.append(precision)
+        self.eval_loss.append(loss)
         if precision>self.best_precision:
             self.best_precision = precision
             torch.save(self,self.saveModel)

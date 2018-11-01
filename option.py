@@ -1,50 +1,56 @@
 import time
 import torch
+import NN
+from torchvision import transforms
 
-debug = False
-Time = time.strftime('%Y-%m-%d', time.localtime())
-# Notes = 'vgg7 2888'
-Notes = 'temp'
 
-log_file = 'runs/2888/'
-use_cuda = True
-GPU = [0]
-batchSize = 128
+Time        =   time.strftime('%Y-%m-%d', time.localtime())
+Notes       =   'temp'
 
-dataSet = 'CIFAR10'
+log_file    =   '../WAGE-runs/AlanNet-2888/'
+use_cuda    =   True
+GPU         =   [0]
+batchSize   =   128
 
-loadModel = None
-# loadModel = '../model/' + '2017-12-06' + '(' + 'vgg7 2888' + ')' + '.tf'
-saveModel = '../models/AlanNet_2888.pth'
-# saveModel = '../model/' + Time + '(' + Notes + ')' + '.tf'
+train_data  =   ['../cifar10/data_batch_1','../cifar10/data_batch_2','../cifar10/data_batch_3','../cifar10/data_batch_4','../cifar10/data_batch_5']
+val_data    =   ['../cifar10/test_batch']
 
-bitsW = 2  # bit width of we ights
-bitsA = 8  # bit width of activations
-bitsG = 8  # bit width of gradients
-bitsE = 8  # bit width of errors
+model       =   NN.AlanNet
 
-bitsR = 16  # bit width of randomizer
+loadModel   =   None
+saveModel   =   '../WAGE-models/AlanNet-2888.pth'
 
-beta = 1.5
 
-lr = torch.tensor(1,dtype=torch.float)
-if use_cuda:
-    lr = lr.cuda()
-lr_modify = {
-    0:8,
-    200:1,
-    250:1/8
-}
-max_epoches = 300
-L2 = 0
+bitsW       =   2  # bit width of we ights
+bitsA       =   8  # bit width of activations
+bitsG       =   8  # bit width of gradients
+bitsE       =   8  # bit width of errors
 
-lossFunc = torch.nn.MSELoss()
-optimizer = torch.optim.SGD
-# lossFunc = tf.losses.softmax_cross_entropy
-#optimizer = tf.train.GradientDescentOptimizer(1)  # lr is controlled in Quantize.G
-# optimizer = tf.train.MomentumOptimizer(lr, 0.9, use_nesterov=True)
+bitsR       =   16  # bit width of randomizer
 
-# shared variables, defined by other files
-seed = None
-sess = None
-W_scale = []
+beta        =   1.5
+
+lr          =   8
+lr_modify   =   {
+                0:8,
+                200:1,
+                250:1/8
+                }
+max_epoches =   300
+L2          =   0
+
+lossFunc    =   torch.nn.MSELoss()
+optimizer   =   torch.optim.SGD
+seed        =   None
+W_scale     =   []
+
+transform_train = transforms.Compose([
+    transforms.RandomCrop(32, padding=4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
+transform_test = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
