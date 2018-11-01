@@ -23,6 +23,12 @@ def clamp_weights(model):
         model.weight.data = model.weight.data.clamp(-1+sigma_G, 1-sigma_G)
         model.bias.data = model.bias.data.clamp(-1+sigma_G, 1-sigma_G)
 
+def change_LR(lr):
+    def change(model):
+        if type(model) == linear or type(model) == conv2d:
+            model.GQ = quantize.GQ(lr).apply
+    return change
+
 
 class conv2d(Module):
     def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1, activation=None):
@@ -43,7 +49,7 @@ class conv2d(Module):
         self.bias = nn.Parameter(
             quantize.Q(self.L*(2*torch.rand([out_channels])-1),bitsG)
         )
-        self.GQ = quantize.GQ.apply
+        self.GQ = quantize.GQ().apply
         self.EQ = quantize.EQ(in_channels*stride**2).apply
         self.activation = activation
 
@@ -71,7 +77,7 @@ class linear(Module):
         self.bias = nn.Parameter(
             quantize.Q(self.L*(2*torch.rand([n_out])-1),bitsG)
         )
-        self.GQ = quantize.GQ.apply
+        self.GQ = quantize.GQ().apply
         self.EQ = quantize.EQ(n_in).apply
         self.activation = activation
         

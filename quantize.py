@@ -73,19 +73,21 @@ def error(op, x):
         xmax = torch.max(torch.abs(x))
         xmax_shift = Shift(xmax)
         return Q(C( x /xmax_shift, bitsE), bitsE)
-
-class GQ(Function):
+def GQ(lr=LR):
+    class G_Q(Function):
     
 
-    @staticmethod
-    def forward(ctx , i):
-        result = Q(i,bitsW)
-        return result
+        @staticmethod
+        def forward(ctx , i):
+            result = Q(i,bitsW)
+            return result
 
-    @staticmethod
-    def backward(ctx, grad_output):
-        gs = LR * grad_output / Shift(torch.max(grad_output))
-        return G(gs)
+        @staticmethod
+        def backward(ctx, grad_output):
+            gs = LR * grad_output / Shift(torch.max(grad_output))
+            return G(gs)
+    
+    return G_Q
 
 def EQ(n_in):
 

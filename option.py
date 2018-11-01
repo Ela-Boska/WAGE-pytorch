@@ -6,6 +6,7 @@ Time = time.strftime('%Y-%m-%d', time.localtime())
 # Notes = 'vgg7 2888'
 Notes = 'temp'
 
+log_file = 'runs/2888/'
 use_cuda = True
 GPU = [0]
 batchSize = 128
@@ -14,7 +15,7 @@ dataSet = 'CIFAR10'
 
 loadModel = None
 # loadModel = '../model/' + '2017-12-06' + '(' + 'vgg7 2888' + ')' + '.tf'
-saveModel = None
+saveModel = '../models/AlanNet_2888.pth'
 # saveModel = '../model/' + Time + '(' + Notes + ')' + '.tf'
 
 bitsW = 2  # bit width of we ights
@@ -29,11 +30,16 @@ beta = 1.5
 lr = torch.tensor(1,dtype=torch.float)
 if use_cuda:
     lr = lr.cuda()
-lr_schedule = [0, 8, 200, 1,250,1./8,300,0]
-
+lr_modify = {
+    0:8,
+    200:1,
+    250:1/8
+}
+max_epoches = 300
 L2 = 0
 
-lossFunc = 'SSE'
+lossFunc = torch.nn.MSELoss()
+optimizer = torch.optim.SGD
 # lossFunc = tf.losses.softmax_cross_entropy
 #optimizer = tf.train.GradientDescentOptimizer(1)  # lr is controlled in Quantize.G
 # optimizer = tf.train.MomentumOptimizer(lr, 0.9, use_nesterov=True)
