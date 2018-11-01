@@ -20,7 +20,7 @@ class AlanNet(Module):
             layer.conv2d(128, 256, kernel_size=3, stride = 1, padding=1, activation=relu),
             layer.conv2d(256, 256, kernel_size=3, stride = 1, padding=1, activation=relu),
             layer.conv2d(256, 256, kernel_size=3, stride = 1, padding=1, activation=relu),
-            layer.conv2d(256, 512 ,kernel_size=2, stride=2, padding =0),               #input/8
+            layer.conv2d(256, 512 ,kernel_size=2, stride=2, padding =0, activation=None),               #input/8
         )
         self.classifier = nn.Sequential(
             nn.Dropout(),
