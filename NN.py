@@ -3,6 +3,8 @@ from torch import nn
 from torch.nn import Module
 import torch.nn.functional as F
 import layer
+from option import use_cuda
+
 
 def relu(x):
     return F.relu(x,True)
@@ -30,9 +32,13 @@ class AlanNet(Module):
             nn.Dropout(),
             layer.linear(256, num_classes)
         )
+        if use_cuda:
+            self.cuda()
 
     def forward(self, x):
         x = self.features(x)
         x = x.view(x.size(0), -1)
         x = self.classifier(x)
         return x
+
+

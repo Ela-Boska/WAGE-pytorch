@@ -48,8 +48,8 @@ class conv2d(Module):
         self.activation = activation
 
     def forward(self, input):
-        weight_tmp = self.GQ(self.weight.data)
-        bias_tmp = self.GQ(self.bias.data)
+        weight_tmp = self.GQ(self.weight)
+        bias_tmp = self.GQ(self.bias)
         input = F.conv2d(input, weight_tmp, bias_tmp, self.stride, self.padding, self.dilation)
         if self.activation:
             input = self.activation(input)

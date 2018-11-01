@@ -2,6 +2,7 @@ import option
 import torch
 import time
 from torch.autograd import Function
+import pdb
 
 LR    = option.lr
 bitsW = option.bitsW
@@ -11,12 +12,18 @@ bitsE = option.bitsE
 bitsR = option.bitsR
 beta = option.beta
 L2 = option.L2
+use_cuda = option.use_cuda
 
 def S(bits):
     return 2.0 ** (bits - 1)
 
 def Shift(x):
-    return 2 ** torch.round(torch.log(torch.tensor(x)) / torch.log(torch.tensor(2.0)))
+    if use_cuda:
+        ans =  2 ** torch.round(torch.log(torch.tensor(x)).cuda() / torch.log(torch.tensor(2.0).cuda()))
+    else:
+        ans =  2 ** torch.round(torch.log(torch.tensor(x)) / torch.log(torch.tensor(2.0)))
+    return ans
+    
 
 def C(x, bits=32):
     if bits > 15 or bits == 1:
@@ -37,27 +44,6 @@ def Q(x, bits):
         SCALE = S(bits)
     return C(torch.round(x * SCALE) / SCALE, bits)
 
-def G_(x,use_bn=False):
-    if bitsG > 15:
-        return x
-    else:
-        if use_bn:
-            return x  # batch norm parameters, not quantize now
-
-        xmax = torch.max(torch.abs(x))
-        x = x / Shift(xmax)
-
-        norm = Q(LR * x, bitsR)
-
-        norm_sign = torch.sign(norm)
-        norm_abs = torch.abs(norm)
-        norm_int = torch.floor(norm_abs)
-        norm_float = norm_abs - norm_int
-        rand_float = torch.rand(x.shape)
-        norm = norm_sign * ( norm_int + 0.5 * (torch.sign(norm_float - rand_float) + 1) )
-
-        return norm / S(bitsG)
-
 def G(x,use_bn=False):
     if bitsG > 15:
         return x
@@ -71,21 +57,13 @@ def G(x,use_bn=False):
         norm = Q(LR * x, bitsR)
 
         rand_float = torch.rand(x.shape)
+        if use_cuda:
+            rand_float = rand_float.cuda()
         floor = torch.floor(norm)
         fraction = norm-floor
         norm = floor + 0.5 * (torch.sign(fraction - rand_float) + 1)
 
         return norm / S(bitsG)
-
-def test(n):
-    x = torch.rand(n,n)
-    t1 = time.time()
-    a = G_(x)
-    t2 = time.time()
-    b = G(x)
-    t3 = time.time()
-    error = (a-b).abs().sum().item()
-    print('G_ takes {}s while G takes {}s, error = {}'.format(t2-t1,t3-t2,error))
 
 
 def error(op, x):

@@ -6,6 +6,7 @@ Time = time.strftime('%Y-%m-%d', time.localtime())
 # Notes = 'vgg7 2888'
 Notes = 'temp'
 
+use_cuda = True
 GPU = [0]
 batchSize = 128
 
@@ -26,6 +27,8 @@ bitsR = 16  # bit width of randomizer
 beta = 1.5
 
 lr = torch.tensor(1,dtype=torch.float)
+if use_cuda:
+    lr = lr.cuda()
 lr_schedule = [0, 8, 200, 1,250,1./8,300,0]
 
 L2 = 0
