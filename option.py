@@ -3,6 +3,7 @@ import torch
 from torchvision import transforms
 import torch.nn.functional as F
 
+debug       =   True
 
 Time        =   time.strftime('%Y-%m-%d', time.localtime())
 Notes       =   'temp'

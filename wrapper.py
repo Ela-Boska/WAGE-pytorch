@@ -7,6 +7,8 @@ import time
 import NN
 import quantize
 import layer
+from writer import log_weights,log_grads
+import pdb
 
 use_cuda    =   option.use_cuda
 lr_modify   =   option.lr_modify
@@ -16,6 +18,7 @@ log_file    =   option.log_file
 batch_size  =   option.batchSize
 loss_fc     =   option.lossFunc
 optimizer   =   option.optimizer
+debug       =   option.debug
 
 writer = SummaryWriter(log_file)
 class wraper(Module):
@@ -62,8 +65,13 @@ class wraper(Module):
             writer.add_scalar('training loss',loss.item(),step)
             self.optimizer.zero_grad()
             loss.backward()
+            pdb.set_trace()
+            if debug:
+                log_weights(writer,self.model,step)
+                #log_grads(writer,self.model,step)
             self.optimizer.step()
             self.model.apply(clamp_weights)
+            
 
         else:
             if use_cuda:

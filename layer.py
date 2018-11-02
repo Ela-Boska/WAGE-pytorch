@@ -58,7 +58,7 @@ class conv2d(Module):
         input = F.conv2d(input, weight_tmp, bias_tmp, self.stride, self.padding, self.dilation)
         if self.activation:
             input = self.activation(input)
-        input = EQ(input, self.in_channels*self.stride**2)  # constant scaling is included in EQ operation
+        input = EQ(input, self.alpha)  # constant scaling is included in EQ operation
         return input
 
 class linear(Module):
@@ -85,5 +85,5 @@ class linear(Module):
         input = F.linear(input, weight_tmp, bias_tmp)
         if self.activation:
             input = self.activation(input)
-        input = EQ(input,self.n_in)
+        input = EQ(input,self.alpha)
         return input
