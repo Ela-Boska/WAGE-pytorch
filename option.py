@@ -1,7 +1,7 @@
 import time
 import torch
-import NN
 from torchvision import transforms
+import torch.nn.functional as F
 
 
 Time        =   time.strftime('%Y-%m-%d', time.localtime())
@@ -15,7 +15,7 @@ batchSize   =   128
 train_data  =   ['../cifar10/data_batch_1','../cifar10/data_batch_2','../cifar10/data_batch_3','../cifar10/data_batch_4','../cifar10/data_batch_5']
 val_data    =   ['../cifar10/test_batch']
 
-model       =   NN.AlanNet
+model       =   'NN.AlanNet()'
 
 loadModel   =   None
 saveModel   =   '../WAGE-models/AlanNet-2888.pth'
@@ -32,14 +32,27 @@ beta        =   1.5
 
 lr          =   8
 lr_modify   =   {
-                0:8,
-                200:1,
-                250:1/8
+                0:torch.tensor(8).float(),
+                200:torch.tensor(1).float(),
+                250:torch.tensor(1/8).float()
                 }
+if use_cuda:
+    for key,item in lr_modify.items():
+        lr_modify[key] = item.cuda()
 max_epoches =   300
 L2          =   0
 
-lossFunc    =   torch.nn.MSELoss()
+def loss_fc(input,label):
+    mask = torch.zeros_like(input)
+    mask[torch.arange(len(input)),label] = 1
+    temp = F.relu(1-input[mask==1],inplace=True)
+    loss = torch.sum(temp**2)
+    temp = F.relu(input[mask!=1]+1,inplace=True)
+    loss += torch.sum(temp**2)
+    return loss
+
+
+lossFunc    =   loss_fc
 optimizer   =   torch.optim.SGD
 seed        =   None
 W_scale     =   []
@@ -48,9 +61,9 @@ transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    transforms.Normalize((0.4915, 0.4823, 0.4468), (0.2470, 0.2435, 0.2616)),
 ])
 transform_test = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+    transforms.Normalize((0.4915, 0.4823, 0.4468), (0.2470, 0.2435, 0.2616)),
 ])

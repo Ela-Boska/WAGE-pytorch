@@ -20,7 +20,7 @@ class dataset(Dataset):
         self.transform = transform
         self.target_transform = target_transform
         data = [unpickle(file) for file in file_list]
-        self.names = unpickle('cifar10/batches.meta')[b'label_names']
+        self.names = unpickle('../cifar10/batches.meta')[b'label_names']
         self.label = []
         arrays = []
         for x in data:

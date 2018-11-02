@@ -73,38 +73,30 @@ def error(op, x):
         xmax = torch.max(torch.abs(x))
         xmax_shift = Shift(xmax)
         return Q(C( x /xmax_shift, bitsE), bitsE)
-def GQ(lr=LR):
-    class G_Q(Function):
-    
 
-        @staticmethod
-        def forward(ctx , i):
-            result = Q(i,bitsW)
-            return result
+class GQ(Function):
 
-        @staticmethod
-        def backward(ctx, grad_output):
-            gs = LR * grad_output / Shift(torch.max(grad_output))
-            return G(gs)
-    
-    return G_Q
+    @staticmethod
+    def forward(ctx , i, lr):
+        ctx.save_for_backward(lr)
+        result = Q(i,bitsW)
+        return result
 
-def EQ(n_in):
+    @staticmethod
+    def backward(ctx, grad_output):
+        lr, = ctx.saved_tensors
+        gs = lr * grad_output / Shift(torch.max(grad_output))
+        return G(gs), None
 
-    class E_Q(Function):
-    
-        L1 = (6/n_in)**0.5
-        L2 = beta / S(bitsW)
-        L = max(L1,L2)
-        alpha = Shift(L/L1)
 
-        @staticmethod
-        def forward(ctx , i):
-            result = Q(i/E_Q.alpha, bitsA)
-            return result
 
-        @staticmethod
-        def backward(ctx, grad_output):
-            return Q(grad_output / Shift(torch.max(grad_output.abs())), bitsE)
-        
-    return E_Q
+class EQ(Function):
+
+    @staticmethod
+    def forward(ctx , i, alpha):
+        result = Q(i/alpha, bitsA)
+        return result
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        return Q(grad_output / Shift(torch.max(grad_output.abs())), bitsE), None

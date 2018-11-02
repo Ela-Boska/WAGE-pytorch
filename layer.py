@@ -6,7 +6,6 @@ import quantize
 import torch.nn.functional as F
 import pdb
 
-LR    = option.lr
 bitsW = option.bitsW
 bitsA = option.bitsA
 bitsG = option.bitsG
@@ -24,14 +23,16 @@ def clamp_weights(model):
         model.bias.data = model.bias.data.clamp(-1+sigma_G, 1-sigma_G)
 
 def change_LR(lr):
-    def change(model):
+    def f(model):
         if type(model) == linear or type(model) == conv2d:
-            model.GQ = quantize.GQ(lr).apply
-    return change
+            model.lr = lr
+    return f
 
+GQ = quantize.GQ.apply
+EQ = quantize.EQ.apply
 
 class conv2d(Module):
-    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1, activation=None):
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1, lr=None, activation=None):
         super(conv2d, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -49,24 +50,23 @@ class conv2d(Module):
         self.bias = nn.Parameter(
             quantize.Q(self.L*(2*torch.rand([out_channels])-1),bitsG)
         )
-        self.GQ = quantize.GQ().apply
-        self.EQ = quantize.EQ(in_channels*stride**2).apply
         self.activation = activation
 
     def forward(self, input):
-        weight_tmp = self.GQ(self.weight)
-        bias_tmp = self.GQ(self.bias)
+        weight_tmp = GQ(self.weight, self.lr)
+        bias_tmp = GQ(self.bias, self.lr)
         input = F.conv2d(input, weight_tmp, bias_tmp, self.stride, self.padding, self.dilation)
         if self.activation:
             input = self.activation(input)
-        input = self.EQ(input)  # constant scaling is included in EQ operation
+        input = EQ(input, self.in_channels*self.stride**2)  # constant scaling is included in EQ operation
         return input
 
 class linear(Module):
-    def __init__(self, n_in, n_out, activation = None):
+    def __init__(self, n_in, n_out, lr=None, activation = None):
         super(linear, self).__init__()
         self.n_in = n_in
         self.n_out = n_out
+        self.lr = lr
         self.L1 = (6/n_in)**0.5
         self.L2 = beta / quantize.S(bitsW)
         self.L = max(self.L1,self.L2)
@@ -77,15 +77,13 @@ class linear(Module):
         self.bias = nn.Parameter(
             quantize.Q(self.L*(2*torch.rand([n_out])-1),bitsG)
         )
-        self.GQ = quantize.GQ().apply
-        self.EQ = quantize.EQ(n_in).apply
         self.activation = activation
         
     def forward(self, input):
-        weight_tmp = self.GQ(self.weight.data)
-        bias_tmp = self.GQ(self.bias.data)
+        weight_tmp = GQ(self.weight.data, self.lr)
+        bias_tmp = GQ(self.bias.data, self.lr)
         input = F.linear(input, weight_tmp, bias_tmp)
         if self.activation:
             input = self.activation(input)
-        input = self.EQ(input)
+        input = EQ(input,self.n_in)
         return input
